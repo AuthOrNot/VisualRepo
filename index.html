@@ -53,4 +53,80 @@
     .line-ORG { color: #ff8200; font-weight: bold; }
     .line-SVR { color: #919d9d; font-weight: bold; }
 
-    #map
+    #map {
+      flex: 1;
+      height: 100%;
+    }
+  </style>
+</head>
+<body>
+  <div id="info">
+    <h1>Rosslyn Metro – Next Trains</h1>
+    <div id="last-updated">Loading...</div>
+    <table>
+      <thead>
+        <tr>
+          <th>Line</th>
+          <th>Destination</th>
+          <th>Arrival</th>
+        </tr>
+      </thead>
+      <tbody id="train-data"></tbody>
+    </table>
+  </div>
+  <div id="map"></div>
+
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <script>
+    const apiKey = "15889836cf154bccb8fdfb9ba6b3420a";
+    const stationCode = "C05"; // Rosslyn
+    const stations = [
+      { name: "Rosslyn", code: "C05", lat: 38.896595, lon: -77.07146 },
+      { name: "Foggy Bottom", code: "C04", lat: 38.9007, lon: -77.0508 },
+      { name: "Court House", code: "K01", lat: 38.8913, lon: -77.0837 },
+      { name: "Arlington Cemetery", code: "C06", lat: 38.8846, lon: -77.0631 }
+    ];
+
+    async function fetchTrains() {
+      const url = `https://api.wmata.com/StationPrediction.svc/json/GetPrediction/${stationCode}`;
+      const response = await fetch(url, {
+        headers: { "api_key": apiKey }
+      });
+      const data = await response.json();
+
+      const tableBody = document.getElementById("train-data");
+      tableBody.innerHTML = "";
+
+      data.Trains.slice(0, 6).forEach(train => {
+        const row = document.createElement("tr");
+        row.innerHTML = `
+          <td class="line-${train.Line}">${train.Line}</td>
+          <td>${train.Destination}</td>
+          <td>${train.Min}</td>
+        `;
+        tableBody.appendChild(row);
+      });
+
+      document.getElementById("last-updated").innerText =
+        "Last updated: " + new Date().toLocaleTimeString();
+    }
+
+    // Init map
+    const map = L.map('map').setView([38.896595, -77.07146], 14);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+
+    // Add station markers
+    stations.forEach(station => {
+      L.marker([station.lat, station.lon])
+        .addTo(map)
+        .bindPopup(`<b>${station.name}</b>`);
+    });
+
+    // Initial fetch and repeat
+    fetchTrains();
+    setInterval(fetchTrains, 30000);
+  </script>
+</body>
+</html>
