@@ -2,89 +2,55 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>WMATA Train Status</title>
+  <title>Rosslyn Metro Status</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
   <style>
     body {
-      font-family: Arial, sans-serif;
-      background: #f8f8f8;
-      color: #222;
-      text-align: center;
-      padding: 20px;
+      margin: 0;
+      font-family: "Segoe UI", Arial, sans-serif;
+      background: #111;
+      color: #fff;
+      display: flex;
+      flex-direction: row;
+      height: 100vh;
+      overflow: hidden;
     }
-    h1 {
-      color: #d71920; /* WMATA red */
+    #info {
+      flex: 1;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+    #info h1 {
+      font-size: 2.5em;
       margin-bottom: 10px;
+      color: #ffd100; /* WMATA Yellow */
     }
     #last-updated {
-      font-size: 0.9em;
-      color: #666;
+      font-size: 1em;
+      color: #aaa;
+      margin-bottom: 20px;
     }
     table {
-      width: 80%;
-      margin: 20px auto;
+      width: 100%;
       border-collapse: collapse;
-      font-size: 1.2em;
+      font-size: 1.6em;
     }
     th, td {
       padding: 12px;
-      border-bottom: 1px solid #ccc;
+      border-bottom: 1px solid #444;
+      text-align: left;
     }
     th {
-      background: #eee;
+      background: #222;
+      color: #ffd100;
     }
-    .line-RED { color: #d71920; }
-    .line-BLU { color: #0072ce; }
-    .line-YEL { color: #ffd100; }
-    .line-GRN { color: #00b140; }
-    .line-ORG { color: #ff8200; }
-    .line-SVR { color: #919d9d; }
-  </style>
-</head>
-<body>
-  <h1>Next Trains – Metro Center</h1>
-  <div id="last-updated">Loading...</div>
-  <table>
-    <thead>
-      <tr>
-        <th>Line</th>
-        <th>Destination</th>
-        <th>Arrival</th>
-      </tr>
-    </thead>
-    <tbody id="train-data"></tbody>
-  </table>
+    .line-RED { color: #d71920; font-weight: bold; }
+    .line-BLU { color: #0072ce; font-weight: bold; }
+    .line-YEL { color: #ffd100; font-weight: bold; }
+    .line-GRN { color: #00b140; font-weight: bold; }
+    .line-ORG { color: #ff8200; font-weight: bold; }
+    .line-SVR { color: #919d9d; font-weight: bold; }
 
-  <script>
-    const apiKey = "15889836cf154bccb8fdfb9ba6b3420a";
-    const stationCode = "C05"; // 
-
-    async function fetchTrains() {
-      const url = `https://api.wmata.com/StationPrediction.svc/json/GetPrediction/${stationCode}`;
-      const response = await fetch(url, {
-        headers: { "api_key": apiKey }
-      });
-      const data = await response.json();
-
-      const tableBody = document.getElementById("train-data");
-      tableBody.innerHTML = ""; // clear old rows
-
-      data.Trains.slice(0, 6).forEach(train => {
-        const row = document.createElement("tr");
-        row.innerHTML = `
-          <td class="line-${train.Line}">${train.Line}</td>
-          <td>${train.Destination}</td>
-          <td>${train.Min}</td>
-        `;
-        tableBody.appendChild(row);
-      });
-
-      document.getElementById("last-updated").innerText =
-        "Last updated: " + new Date().toLocaleTimeString();
-    }
-
-    // Refresh every 30 seconds
-    fetchTrains();
-    setInterval(fetchTrains, 30000);
-  </script>
-</body>
-</html>
+    #map
