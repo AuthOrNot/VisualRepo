@@ -369,44 +369,7 @@
         const WMATA_API_KEY = '15889836cf154bccb8fdfb9ba6b3420a';
         const ROSSLYN_STATION_CODE = 'C05';
         
-        // Demo data for when API is not available
-        const demoTrains = [
-            {
-                Line: 'OR',
-                Destination: 'Vienna/Fairfax',
-                Min: '2',
-                Car: '8',
-                DestinationName: 'Vienna/Fairfax-GMU'
-            },
-            {
-                Line: 'BL',
-                Destination: 'Franconia',
-                Min: '5',
-                Car: '6',
-                DestinationName: 'Franconia-Springfield'
-            },
-            {
-                Line: 'SV',
-                Destination: 'Ashburn',
-                Min: '8',
-                Car: '8',
-                DestinationName: 'Ashburn'
-            },
-            {
-                Line: 'OR',
-                Destination: 'Vienna/Fairfax',
-                Min: '12',
-                Car: '6',
-                DestinationName: 'Vienna/Fairfax-GMU'
-            },
-            {
-                Line: 'BL',
-                Destination: 'Downtown',
-                Min: '15',
-                Car: '8',
-                DestinationName: 'Downtown Largo'
-            }
-        ];
+
 
         function getLineClass(lineCode) {
             const lineMap = {
@@ -440,17 +403,18 @@
 
         async function fetchTrainData() {
             try {
-                // In a real implementation, you would use:
-                // const response = await fetch(`https://api.wmata.com/Rail.svc/json/jStationPrediction?StationCode=${ROSSLYN_STATION_CODE}&api_key=${WMATA_API_KEY}`);
-                // const data = await response.json();
+                const response = await fetch(`http://api.wmata.com/StationPrediction.svc/json/GetPrediction/C05?api_key=${WMATA_API_KEY}`);
                 
-                // For demo purposes, we'll use sample data
-                // Remove this and uncomment above when you have a real API key
-                return { Trains: demoTrains };
+                if (!response.ok) {
+                    throw new Error(`API request failed: ${response.status} ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                return data;
                 
             } catch (error) {
                 console.error('Error fetching train data:', error);
-                return { Trains: demoTrains };
+                throw error;
             }
         }
 
@@ -458,7 +422,7 @@
             const trainList = document.getElementById('trainList');
             
             if (!trains || trains.length === 0) {
-                trainList.innerHTML = '<div class="loading">No trains scheduled</div>';
+                trainList.innerHTML = '<div class="error">No train data available - Check API connection</div>';
                 return;
             }
 
@@ -492,8 +456,9 @@
                 renderTrains(data.Trains);
                 updateLastUpdated();
             } catch (error) {
+                console.error('Failed to update display:', error);
                 document.getElementById('trainList').innerHTML = 
-                    '<div class="error">Unable to load train data</div>';
+                    `<div class="error">API Error: ${error.message}<br><small>Check API key and connection</small></div>`;
             }
         }
 
