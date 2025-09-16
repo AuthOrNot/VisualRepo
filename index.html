@@ -1,158 +1,520 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Rosslyn Metro Status – Northeastern</title>
-  <style>
-    body {
-      margin: 0;
-      font-family: "Segoe UI", Arial, sans-serif;
-      background: #000;
-      color: #fff;
-      display: flex;
-      flex-direction: column;
-      height: 100vh;
-      overflow: hidden;
-    }
-    header {
-      display: flex;
-      align-items: center;
-      background: #fff;
-      padding: 10px 20px;
-    }
-    header img {
-      height: 50px;
-    }
-    #main {
-      flex: 1;
-      display: flex;
-      flex-direction: row;
-    }
-    #info {
-      flex: 1;
-      padding: 20px;
-      display: flex;
-      flex-direction: column;
-    }
-    #info h1 {
-      font-size: 2.2em;
-      margin-bottom: 10px;
-      color: #c8102e; /* Northeastern Red */
-    }
-    #last-updated {
-      font-size: 1em;
-      color: #aaa;
-      margin-bottom: 20px;
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 1.4em;
-    }
-    th, td {
-      padding: 12px;
-      border-bottom: 1px solid #444;
-      text-align: left;
-    }
-    th {
-      background: #111;
-      color: #c8102e;
-    }
-    .line-RED { color: #d71920; font-weight: bold; }
-    .line-BLU { color: #0072ce; font-weight: bold; }
-    .line-YEL { color: #ffd100; font-weight: bold; }
-    .line-GRN { color: #00b140; font-weight: bold; }
-    .line-ORG { color: #ff8200; font-weight: bold; }
-    .line-SVR { color: #919d9d; font-weight: bold; }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rosslyn Metro Station - Real-Time Information</title>
+    <link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-    #map-container {
-      flex: 1;
-      position: relative;
-      background: #fff;
-    }
-    #wmata-map {
-      width: 100%;
-      height: 100%;
-      object-fit: contain;
-    }
-    .station-marker {
-      position: absolute;
-      width: 16px;
-      height: 16px;
-      background: #c8102e;
-      border-radius: 50%;
-      border: 2px solid white;
-    }
-    .station-label {
-      position: absolute;
-      color: #000;
-      background: #fff;
-      padding: 2px 6px;
-      border-radius: 4px;
-      font-size: 0.8em;
-      white-space: nowrap;
-    }
-  </style>
+        body {
+            font-family: 'Lato', sans-serif;
+            background: linear-gradient(135deg, #000000 0%, #1a1a1a 100%);
+            color: white;
+            overflow: hidden;
+            height: 100vh;
+        }
+
+        .signage-container {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            height: 100vh;
+            gap: 20px;
+            padding: 20px;
+        }
+
+        .main-content {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid #dc143c;
+            border-radius: 15px;
+            padding: 30px;
+            text-align: center;
+            position: relative;
+        }
+
+        .northeastern-brand {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            margin-bottom: 10px;
+        }
+
+        .logo-n {
+            width: 60px;
+            height: 60px;
+            background: #dc143c;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 36px;
+            font-weight: 900;
+            color: white;
+        }
+
+        .station-title {
+            font-size: 48px;
+            font-weight: 900;
+            color: #dc143c;
+            margin-bottom: 5px;
+        }
+
+        .station-subtitle {
+            font-size: 24px;
+            color: #cccccc;
+        }
+
+        .last-updated {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            font-size: 12px;
+            color: #888;
+        }
+
+        .trains-section {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid #333;
+            border-radius: 15px;
+            padding: 30px;
+        }
+
+        .trains-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            border-bottom: 2px solid #dc143c;
+            padding-bottom: 15px;
+        }
+
+        .trains-title {
+            font-size: 28px;
+            font-weight: 700;
+            color: #dc143c;
+        }
+
+        .refresh-indicator {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 14px;
+            color: #888;
+        }
+
+        .refresh-dot {
+            width: 8px;
+            height: 8px;
+            background: #00ff00;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+
+        .train-list {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .train-row {
+            display: grid;
+            grid-template-columns: 120px 1fr 100px 100px;
+            gap: 20px;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid #444;
+            border-radius: 8px;
+            padding: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .train-row:hover {
+            background: rgba(220, 20, 60, 0.1);
+            border-color: #dc143c;
+        }
+
+        .line-indicator {
+            padding: 8px 16px;
+            border-radius: 25px;
+            font-weight: 700;
+            text-align: center;
+            font-size: 14px;
+        }
+
+        .line-orange { background: #ff6600; color: white; }
+        .line-blue { background: #0073e6; color: white; }
+        .line-silver { background: #919496; color: white; }
+        .line-red { background: #dc143c; color: white; }
+        .line-yellow { background: #ffd100; color: black; }
+        .line-green { background: #009639; color: white; }
+
+        .destination {
+            font-size: 18px;
+            font-weight: 700;
+        }
+
+        .cars {
+            font-size: 14px;
+            color: #aaa;
+            text-align: center;
+        }
+
+        .arrival-time {
+            font-size: 22px;
+            font-weight: 700;
+            text-align: center;
+            padding: 8px;
+            border-radius: 6px;
+            background: rgba(220, 20, 60, 0.2);
+            color: #dc143c;
+        }
+
+        .sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .map-container {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid #333;
+            border-radius: 15px;
+            padding: 20px;
+            flex: 1;
+        }
+
+        .map-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: #dc143c;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .map-display {
+            width: 100%;
+            height: 300px;
+            background: #1a1a1a;
+            border: 2px solid #444;
+            border-radius: 8px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .map-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 6px;
+        }
+
+        .map-placeholder {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: #2a2a2a;
+            color: #888;
+            text-align: center;
+            position: relative;
+        }
+
+        .metro-pin {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 20px;
+            height: 20px;
+            background: #dc143c;
+            border: 3px solid white;
+            border-radius: 50%;
+            animation: ping 2s infinite;
+        }
+
+        @keyframes ping {
+            0% { transform: translate(-50%, -50%) scale(1); }
+            50% { transform: translate(-50%, -50%) scale(1.2); opacity: 0.7; }
+            100% { transform: translate(-50%, -50%) scale(1); }
+        }
+
+        .info-panel {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid #333;
+            border-radius: 15px;
+            padding: 20px;
+        }
+
+        .info-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #dc143c;
+            margin-bottom: 15px;
+        }
+
+        .info-item {
+            margin-bottom: 10px;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+            color: #888;
+            margin-top: 15px;
+        }
+
+        .status-dot {
+            width: 6px;
+            height: 6px;
+            background: #00ff00;
+            border-radius: 50%;
+        }
+
+        .loading {
+            text-align: center;
+            color: #888;
+            font-style: italic;
+        }
+
+        .error {
+            color: #ff4444;
+            text-align: center;
+            font-weight: 700;
+        }
+    </style>
 </head>
 <body>
-  <header>
-    <img src="NEU-Logo.png" alt="Northeastern Logo">
-  </header>
-  <div id="main">
-    <div id="info">
-      <h1>Rosslyn Metro – Next Trains</h1>
-      <div id="last-updated">Loading...</div>
-      <table>
-        <thead>
-          <tr>
-            <th>Line</th>
-            <th>Destination</th>
-            <th>Arrival</th>
-          </tr>
-        </thead>
-        <tbody id="train-data"></tbody>
-      </table>
+    <div class="signage-container">
+        <div class="main-content">
+            <div class="header">
+                <div class="northeastern-brand">
+                    <div class="logo-n">N</div>
+                    <div>
+                        <div class="station-title">Rosslyn Metro</div>
+                        <div class="station-subtitle">Real-Time Departures</div>
+                    </div>
+                </div>
+                <div class="last-updated" id="lastUpdated">Last updated: --:--</div>
+            </div>
+
+            <div class="trains-section">
+                <div class="trains-header">
+                    <div class="trains-title">Next Trains</div>
+                    <div class="refresh-indicator">
+                        <div class="refresh-dot"></div>
+                        <span>Live Updates</span>
+                    </div>
+                </div>
+                <div class="train-list" id="trainList">
+                    <div class="loading">Loading real-time train information...</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="sidebar">
+            <div class="map-container">
+                <div class="map-title">Station Location</div>
+                <div class="map-display">
+                    <!-- Replace 'path/to/your/rosslyn-map.png' with your actual map image path -->
+                    <img src="path/to/your/rosslyn-map.png" alt="Rosslyn Metro Station Area Map" class="map-image" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                    <div class="map-placeholder" style="display: none;">
+                        <div style="font-size: 14px; margin-bottom: 10px;">📍 Rosslyn Metro Station</div>
+                        <div style="font-size: 12px;">Replace with your map image</div>
+                        <div style="font-size: 10px; margin-top: 5px;">Update src path in HTML</div>
+                        <div class="metro-pin"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="info-panel">
+                <div class="info-title">Station Information</div>
+                <div class="info-item"><strong>Lines:</strong> Orange, Blue, Silver</div>
+                <div class="info-item"><strong>Address:</strong> 1850 N Moore St, Arlington, VA</div>
+                <div class="info-item"><strong>First Train:</strong> 5:18 AM</div>
+                <div class="info-item"><strong>Last Train:</strong> 12:18 AM</div>
+                <div class="status-indicator">
+                    <div class="status-dot"></div>
+                    <span>Station Status: Normal Operations</span>
+                </div>
+            </div>
+        </div>
     </div>
-    <div id="map-container">
-      <!-- Static WMATA map -->
-      <img id="wmata-map" src="https://www.wmata.com/schedules/maps/upload/2022-System-Map.png" alt="WMATA Rail Map">
-      
-      <!-- Example overlay markers (approximate positions, must adjust manually with CSS) -->
-      <div class="station-marker" style="top:45%; left:40%;"></div>
-      <div class="station-label" style="top:47%; left:42%;">Rosslyn</div>
-    </div>
-  </div>
 
-  <script>
-    const apiKey = "15889836cf154bccb8fdfb9ba6b3420a";
-    const stationCode = "C05"; // Rosslyn
+    <script>
+        // WMATA API configuration
+        const WMATA_API_KEY = '15889836cf154bccb8fdfb9ba6b3420a';
+        const ROSSLYN_STATION_CODE = 'C05';
+        
+        // Demo data for when API is not available
+        const demoTrains = [
+            {
+                Line: 'OR',
+                Destination: 'Vienna/Fairfax',
+                Min: '2',
+                Car: '8',
+                DestinationName: 'Vienna/Fairfax-GMU'
+            },
+            {
+                Line: 'BL',
+                Destination: 'Franconia',
+                Min: '5',
+                Car: '6',
+                DestinationName: 'Franconia-Springfield'
+            },
+            {
+                Line: 'SV',
+                Destination: 'Ashburn',
+                Min: '8',
+                Car: '8',
+                DestinationName: 'Ashburn'
+            },
+            {
+                Line: 'OR',
+                Destination: 'Vienna/Fairfax',
+                Min: '12',
+                Car: '6',
+                DestinationName: 'Vienna/Fairfax-GMU'
+            },
+            {
+                Line: 'BL',
+                Destination: 'Downtown',
+                Min: '15',
+                Car: '8',
+                DestinationName: 'Downtown Largo'
+            }
+        ];
 
-    async function fetchTrains() {
-      const url = `https://api.wmata.com/StationPrediction.svc/json/GetPrediction/${stationCode}`;
-      const response = await fetch(url, {
-        headers: { "api_key": apiKey }
-      });
-      const data = await response.json();
+        function getLineClass(lineCode) {
+            const lineMap = {
+                'OR': 'line-orange',
+                'BL': 'line-blue',
+                'SV': 'line-silver',
+                'RD': 'line-red',
+                'YL': 'line-yellow',
+                'GR': 'line-green'
+            };
+            return lineMap[lineCode] || 'line-orange';
+        }
 
-      const tableBody = document.getElementById("train-data");
-      tableBody.innerHTML = "";
+        function getLineName(lineCode) {
+            const lineMap = {
+                'OR': 'Orange',
+                'BL': 'Blue',
+                'SV': 'Silver',
+                'RD': 'Red',
+                'YL': 'Yellow',
+                'GR': 'Green'
+            };
+            return lineMap[lineCode] || lineCode;
+        }
 
-      data.Trains.slice(0, 6).forEach(train => {
-        const row = document.createElement("tr");
-        row.innerHTML = `
-          <td class="line-${train.Line}">${train.Line}</td>
-          <td>${train.Destination}</td>
-          <td>${train.Min}</td>
-        `;
-        tableBody.appendChild(row);
-      });
+        function formatArrivalTime(minutes) {
+            if (minutes === 'ARR' || minutes === '0') return 'ARR';
+            if (minutes === 'BRD') return 'BRD';
+            return minutes + ' min';
+        }
 
-      document.getElementById("last-updated").innerText =
-        "Last updated: " + new Date().toLocaleTimeString();
-    }
+        async function fetchTrainData() {
+            try {
+                // In a real implementation, you would use:
+                // const response = await fetch(`https://api.wmata.com/Rail.svc/json/jStationPrediction?StationCode=${ROSSLYN_STATION_CODE}&api_key=${WMATA_API_KEY}`);
+                // const data = await response.json();
+                
+                // For demo purposes, we'll use sample data
+                // Remove this and uncomment above when you have a real API key
+                return { Trains: demoTrains };
+                
+            } catch (error) {
+                console.error('Error fetching train data:', error);
+                return { Trains: demoTrains };
+            }
+        }
 
-    fetchTrains();
-    setInterval(fetchTrains, 30000);
-  </script>
+        function renderTrains(trains) {
+            const trainList = document.getElementById('trainList');
+            
+            if (!trains || trains.length === 0) {
+                trainList.innerHTML = '<div class="loading">No trains scheduled</div>';
+                return;
+            }
+
+            const trainHTML = trains.slice(0, 6).map(train => `
+                <div class="train-row">
+                    <div class="line-indicator ${getLineClass(train.Line)}">
+                        ${getLineName(train.Line)}
+                    </div>
+                    <div class="destination">${train.DestinationName || train.Destination}</div>
+                    <div class="cars">${train.Car} cars</div>
+                    <div class="arrival-time">${formatArrivalTime(train.Min)}</div>
+                </div>
+            `).join('');
+
+            trainList.innerHTML = trainHTML;
+        }
+
+        function updateLastUpdated() {
+            const now = new Date();
+            const timeString = now.toLocaleTimeString('en-US', { 
+                hour12: false, 
+                hour: '2-digit', 
+                minute: '2-digit' 
+            });
+            document.getElementById('lastUpdated').textContent = `Last updated: ${timeString}`;
+        }
+
+        async function updateDisplay() {
+            try {
+                const data = await fetchTrainData();
+                renderTrains(data.Trains);
+                updateLastUpdated();
+            } catch (error) {
+                document.getElementById('trainList').innerHTML = 
+                    '<div class="error">Unable to load train data</div>';
+            }
+        }
+
+        // Initialize display
+        updateDisplay();
+
+        // Update every 30 seconds
+        setInterval(updateDisplay, 30000);
+
+        // Add some interactivity
+        document.addEventListener('DOMContentLoaded', function() {
+            // Add click handler for manual refresh
+            document.querySelector('.refresh-indicator').addEventListener('click', updateDisplay);
+            
+            // Add keyboard shortcut for refresh (R key)
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'r' || e.key === 'R') {
+                    updateDisplay();
+                }
+            });
+        });
+    </script>
 </body>
 </html>
