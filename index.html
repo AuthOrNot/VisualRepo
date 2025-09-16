@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>WMATA Train Status</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f8f8f8;
+      color: #222;
+      text-align: center;
+      padding: 20px;
+    }
+    h1 {
+      color: #d71920; /* WMATA red */
+      margin-bottom: 10px;
+    }
+    #last-updated {
+      font-size: 0.9em;
+      color: #666;
+    }
+    table {
+      width: 80%;
+      margin: 20px auto;
+      border-collapse: collapse;
+      font-size: 1.2em;
+    }
+    th, td {
+      padding: 12px;
+      border-bottom: 1px solid #ccc;
+    }
+    th {
+      background: #eee;
+    }
+    .line-RED { color: #d71920; }
+    .line-BLU { color: #0072ce; }
+    .line-YEL { color: #ffd100; }
+    .line-GRN { color: #00b140; }
+    .line-ORG { color: #ff8200; }
+    .line-SVR { color: #919d9d; }
+  </style>
+</head>
+<body>
+  <h1>Next Trains – Metro Center</h1>
+  <div id="last-updated">Loading...</div>
+  <table>
+    <thead>
+      <tr>
+        <th>Line</th>
+        <th>Destination</th>
+        <th>Arrival</th>
+      </tr>
+    </thead>
+    <tbody id="train-data"></tbody>
+  </table>
+
+  <script>
+    const apiKey = "15889836cf154bccb8fdfb9ba6b3420a";
+    const stationCode = "C05"; // 
+
+    async function fetchTrains() {
+      const url = `https://api.wmata.com/StationPrediction.svc/json/GetPrediction/${stationCode}`;
+      const response = await fetch(url, {
+        headers: { "api_key": apiKey }
+      });
+      const data = await response.json();
+
+      const tableBody = document.getElementById("train-data");
+      tableBody.innerHTML = ""; // clear old rows
+
+      data.Trains.slice(0, 6).forEach(train => {
+        const row = document.createElement("tr");
+        row.innerHTML = `
+          <td class="line-${train.Line}">${train.Line}</td>
+          <td>${train.Destination}</td>
+          <td>${train.Min}</td>
+        `;
+        tableBody.appendChild(row);
+      });
+
+      document.getElementById("last-updated").innerText =
+        "Last updated: " + new Date().toLocaleTimeString();
+    }
+
+    // Refresh every 30 seconds
+    fetchTrains();
+    setInterval(fetchTrains, 30000);
+  </script>
+</body>
+</html>
