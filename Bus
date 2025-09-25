@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wilson Blvd & N Oak St - Real-Time Bus Information</title>
+    <link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Lato', sans-serif;
+            background: #ffffff;
+            color: #333333;
+            overflow: hidden;
+            height: 100vh;
+        }
+
+        .signage-container {
+            display: grid;
+            grid-template-columns: 3fr 1fr;
+            height: 100vh;
+            gap: 20px;
+            padding: 20px;
+        }
+
+        .main-content {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .header {
+            background: #f8f9fa;
+            border: 2px solid #e9ecef;
+            border-radius: 15px;
+            padding: 30px;
+            text-align: center;
+            position: relative;
+        }
+
+        .station-brand {
+            margin-bottom: 10px;
+        }
+
+        .station-title {
+            font-size: 56px;
+            font-weight: 900;
+            color: #212529;
+            margin-bottom: 8px;
+        }
+
+        .station-subtitle {
+            font-size: 28px;
+            color: #6c757d;
+        }
+
+        .last-updated {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            font-size: 12px;
+            color: #6c757d;
+        }
+
+        .buses-section {
+            flex: 1;
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 15px;
+            padding: 30px;
+        }
+
+        .buses-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            border-bottom: 2px solid #dee2e6;
+            padding-bottom: 15px;
+        }
+
+        .buses-title {
+            font-size: 32px;
+            font-weight: 700;
+            color: #212529;
+        }
+
+        .refresh-indicator {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 14px;
+            color: #6c757d;
+            cursor: pointer;
+        }
+
+        .refresh-dot {
+            width: 8px;
+            height: 8px;
+            background: #28a745;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+
+        .bus-list {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .bus-row {
+            display: grid;
+            grid-template-columns: 100px 1fr 120px 120px;
+            gap: 20px;
+            align-items: center;
+            background: #ffffff;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .bus-row:hover {
+            background: #f8f9fa;
+            border-color: #adb5bd;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .route-indicator {
+            padding: 12px 8px;
+            border-radius: 8px;
+            font-weight: 900;
+            text-align: center;
+            font-size: 18px;
+            background: #007bff;
+            color: white;
+            min-height: 45px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .destination {
+            font-size: 20px;
+            font-weight: 700;
+            color: #212529;
+        }
+
+        .direction {
+            font-size: 16px;
+            color: #6c757d;
+            margin-top: 2px;
+        }
+
+        .trip-id {
+            font-size: 14px;
+            color: #6c757d;
+            text-align: center;
+        }
+
+        .arrival-time {
+            font-size: 26px;
+            font-weight: 700;
+            text-align: center;
+            padding: 10px;
+            border-radius: 6px;
+            background: #e9ecef;
+            color: #212529;
+        }
+
+        .sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .map-container {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 15px;
+            padding: 15px;
+            flex: 0 0 auto;
+        }
+
+        .map-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: #212529;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        .map-display {
+            width: 100%;
+            height: 180px;
+            background: #ffffff;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .map-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 6px;
+        }
+
+        .map-placeholder {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: #f8f9fa;
+            color: #6c757d;
+            text-align: center;
+            position: relative;
+        }
+
+        .bus-pin {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 20px;
+            height: 20px;
+            background: #007bff;
+            border: 3px solid #ffffff;
+            border-radius: 50%;
+            animation: ping 2s infinite;
+        }
+
+        @keyframes ping {
+            0% { transform: translate(-50%, -50%) scale(1); }
+            50% { transform: translate(-50%, -50%) scale(1.2); opacity: 0.7; }
+            100% { transform: translate(-50%, -50%) scale(1); }
+        }
+
+        .info-panel {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 15px;
+            padding: 25px;
+            flex: 1;
+        }
+
+        .info-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: #212529;
+            margin-bottom: 20px;
+        }
+
+        .info-item {
+            margin-bottom: 15px;
+            font-size: 16px;
+            line-height: 1.6;
+            color: #495057;
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 14px;
+            color: #6c757d;
+            margin-top: 20px;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            background: #28a745;
+            border-radius: 50%;
+        }
+
+        .loading {
+            text-align: center;
+            color: #6c757d;
+            font-style: italic;
+        }
+
+        .error {
+            color: #dc3545;
+            text-align: center;
+            font-weight: 700;
+        }
+
+        .api-status {
+            position: absolute;
+            bottom: 10px;
+            right: 15px;
+            font-size: 10px;
+            color: #6c757d;
+        }
+    </style>
+</head>
+<body>
+    <div class="signage-container">
+        <div class="main-content">
+            <div class="header">
+                <div class="station-brand">
+                    <div class="station-title">Wilson Blvd & N Oak St</div>
+                    <div class="station-subtitle">Real-Time Bus Arrivals</div>
+                </div>
+                <div class="last-updated" id="lastUpdated">Last updated: --:--</div>
+                <div class="api-status" id="apiStatus">API: Connecting...</div>
+            </div>
+
+            <div class="buses-section">
+                <div class="buses-header">
+                    <div class="buses-title">Next Buses</div>
+                    <div class="refresh-indicator" title="Click to refresh">
+                        <div class="refresh-dot"></div>
+                        <span>Live Updates</span>
+                    </div>
+                </div>
+                <div class="bus-list" id="busList">
+                    <div class="loading">Loading real-time bus information...</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="sidebar">
+            <div class="map-container">
+                <div class="map-title">Bus Stop Location</div>
+                <div class="map-display">
+                    <!-- You can add a map image of the area if desired -->
+                    <div class="map-placeholder">
+                        <div style="font-size: 14px; margin-bottom: 10px;">🚌 Wilson Blvd & N Oak St</div>
+                        <div style="font-size: 12px;">Arlington, VA</div>
+                        <div style="font-size: 10px; margin-top: 5px;">Stop ID: 6000702</div>
+                        <div class="bus-pin"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="info-panel">
+                <div class="info-title">Stop Information</div>
+                <div class="info-item"><strong>Stop ID:</strong> 6000702</div>
+                <div class="info-item"><strong>Location:</strong> Wilson Blvd & N Oak St</div>
+                <div class="info-item"><strong>City:</strong> Arlington, VA</div>
+                <div class="info-item"><strong>Near:</strong> Rosslyn Metro Station</div>
+                <div class="status-indicator">
+                    <div class="status-dot" id="statusDot"></div>
+                    <span id="statusText">Stop Status: Checking...</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // WMATA API configuration
+        const WMATA_API_KEY = '15889836cf154bccb8fdfb9ba6b3420a'; // Your API key
+        const BUS_STOP_ID = '6000702'; // Wilson Blvd & N Oak St
+
+        function formatArrivalTime(minutes) {
+            if (!minutes || minutes === '0') return 'ARR';
+            if (minutes === '1') return '1 min';
+            return minutes + ' mins';
+        }
+
+        function updateApiStatus(status, isError = false) {
+            const apiStatus = document.getElementById('apiStatus');
+            const statusDot = document.getElementById('statusDot');
+            const statusText = document.getElementById('statusText');
+            
+            apiStatus.textContent = `API: ${status}`;
+            
+            if (isError) {
+                statusDot.style.background = '#dc3545';
+                statusText.textContent = 'Stop Status: Connection Error';
+            } else {
+                statusDot.style.background = '#28a745';
+                statusText.textContent = 'Stop Status: Normal Operations';
+            }
+        }
+
+        async function fetchBusData() {
+            try {
+                updateApiStatus('Connecting...');
+                
+                // Validate API key
+                if (!WMATA_API_KEY || WMATA_API_KEY === 'YOUR_WMATA_API_KEY_HERE') {
+                    throw new Error('Please update WMATA_API_KEY with your actual API key');
+                }
+                
+                const response = await fetch(`https://api.wmata.com/NextBusService.svc/json/jPredictions?StopID=${BUS_STOP_ID}&api_key=${WMATA_API_KEY}`, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (!response.ok) {
+                    if (response.status === 401) {
+                        throw new Error('Invalid API Key - Check your WMATA API key');
+                    } else if (response.status === 429) {
+                        throw new Error('Rate limit exceeded - Too many requests');
+                    } else {
+                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    }
+                }
+                
+                const data = await response.json();
+                console.log('API Response:', data);
+                
+                updateApiStatus('Connected');
+                return data;
+                
+            } catch (error) {
+                console.error('Error fetching bus data:', error);
+                updateApiStatus('Error', true);
+                throw error;
+            }
+        }
+
+        function renderBuses(predictions) {
+            const busList = document.getElementById('busList');
+            
+            if (!predictions || predictions.length === 0) {
+                busList.innerHTML = '<div class="error">No bus predictions available - API returned empty results</div>';
+                return;
+            }
+
+            // Filter out any invalid predictions and limit to 8 buses
+            const validPredictions = predictions
+                .filter(pred => pred && pred.RouteID)
+                .slice(0, 8);
+
+            if (validPredictions.length === 0) {
+                busList.innerHTML = '<div class="error">No valid bus predictions available</div>';
+                return;
+            }
+
+            const busHTML = validPredictions.map(bus => `
+                <div class="bus-row">
+                    <div class="route-indicator">
+                        ${bus.RouteID || '?'}
+                    </div>
+                    <div>
+                        <div class="destination">${bus.DirectionText || 'Unknown Destination'}</div>
+                        <div class="direction">${bus.DirectionNum === '0' ? 'Inbound' : bus.DirectionNum === '1' ? 'Outbound' : 'Direction ' + (bus.DirectionNum || '?')}</div>
+                    </div>
+                    <div class="trip-id">${bus.TripID ? 'Trip ' + bus.TripID.slice(-4) : 'Trip ?'}</div>
+                    <div class="arrival-time">${formatArrivalTime(bus.Minutes)}</div>
+                </div>
+            `).join('');
+
+            busList.innerHTML = busHTML;
+        }
+
+        function updateLastUpdated() {
+            const now = new Date();
+            const timeString = now.toLocaleTimeString('en-US', { 
+                hour12: false, 
+                hour: '2-digit', 
+                minute: '2-digit',
+                second: '2-digit'
+            });
+            document.getElementById('lastUpdated').textContent = `Last updated: ${timeString}`;
+        }
+
+        async function updateDisplay() {
+            try {
+                const data = await fetchBusData();
+                
+                // Ensure we have the expected data structure
+                if (!data || typeof data !== 'object') {
+                    throw new Error('Invalid API response format');
+                }
+                
+                renderBuses(data.Predictions);
+                updateLastUpdated();
+                
+            } catch (error) {
+                console.error('Failed to update display:', error);
+                const errorMessage = error.message.includes('API key') 
+                    ? 'Invalid API Key - Please check your WMATA API credentials'
+                    : `Connection Error: ${error.message}`;
+                    
+                document.getElementById('busList').innerHTML = 
+                    `<div class="error">${errorMessage}<br><small>Press 'R' to retry or click the refresh indicator</small></div>`;
+            }
+        }
+
+        // Initialize display
+        document.addEventListener('DOMContentLoaded', function() {
+            updateDisplay();
+            
+            // Add click handler for manual refresh
+            document.querySelector('.refresh-indicator').addEventListener('click', function() {
+                console.log('Manual refresh triggered');
+                updateDisplay();
+            });
+            
+            // Add keyboard shortcut for refresh (R key)
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'r' || e.key === 'R') {
+                    console.log('Keyboard refresh triggered');
+                    updateDisplay();
+                }
+            });
+        });
+
+        // Update every 30 seconds
+        setInterval(updateDisplay, 30000);
+    </script>
+</body>
+</html>
